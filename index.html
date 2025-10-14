@@ -31,17 +31,21 @@
 
     <script>
         // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+        // ★ここに、あなたのGist IDを設定してください
         const GIST_ID = "1c9b453b53911f63ca02dac87a737735";
         // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-        const apiUrl = `https://api.github.com/gists/${GIST_ID}`;
+        const apiBaseUrl = `https://api.github.com/gists/${GIST_ID}`;
         
         const outputElement = document.getElementById('output');
         const statusElement = document.getElementById('status');
 
         async function fetchAndUpdateGist() {
             try {
-                const response = await fetch(apiUrl);
+                // ★変更点1：URLの末尾に現在時刻を付けてキャッシュを回避する
+                const url = `${apiBaseUrl}?_=${new Date().getTime()}`;
+                const response = await fetch(url);
+
                 if (!response.ok) {
                     throw new Error(`APIからの応答がありませんでした: ${response.statusText}`);
                 }
@@ -50,14 +54,12 @@
                 const filename = Object.keys(data.files)[0];
                 const markdownContent = data.files[filename].content;
                 
-                // MarkdownをHTMLに変換し、安全な形にしてから表示
                 const dirtyHtml = marked.parse(markdownContent);
                 const cleanHtml = DOMPurify.sanitize(dirtyHtml);
                 outputElement.innerHTML = cleanHtml;
                 
-                // 最終更新日時を表示
                 const updatedAt = new Date(data.updated_at).toLocaleString('ja-JP');
-                statusElement.textContent = `last update: ${updatedAt}`;
+                statusElement.textContent = `最終更新: ${updatedAt}`;
 
             } catch (error) {
                 console.error("Gistの取得に失敗しました:", error);
@@ -69,8 +71,8 @@
         // 最初に一度実行
         fetchAndUpdateGist();
 
-        // その後、15秒ごとに内容をチェックして更新する
-        setInterval(fetchAndUpdateGist, 15000); // 15000ミリ秒 = 15秒
+        // ★変更点2：更新間隔を15秒から10秒に短縮
+        setInterval(fetchAndUpdateGist, 10000); // 10000ミリ秒 = 10秒
     </script>
 </body>
 </html>
